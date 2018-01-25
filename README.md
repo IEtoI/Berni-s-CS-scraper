@@ -2,8 +2,8 @@
 This program scrapes steam market jsons
 
 The program reads a list of steam marketplace links e.g.: 
-http://steamcommunity.com/market/listings/578080/SURVIVOR%20CRATE
-http://steamcommunity.com/market/listings/578080/WANDERER%20CRATE
+<li>http://steamcommunity.com/market/listings/578080/SURVIVOR%20CRATE</li>
+<li>http://steamcommunity.com/market/listings/578080/WANDERER%20CRATE</li>
 .
 .
 .
