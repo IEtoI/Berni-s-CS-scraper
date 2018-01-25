@@ -1,0 +1,124 @@
+import urllib.request
+import re
+import pandas as pd
+import numpy as np
+import datetime
+import matplotlib.pylab as plt
+import matplotlib.gridspec as gridspec
+import seaborn as sns
+
+
+file = "Data.csv"
+
+
+def get_item_info():
+    """
+    function opens items.txt file and extract appids and name of the items
+    returns then appids and names of items stored in 2 lists
+    """
+    appids = []
+    names = []
+    with open("items.txt", 'r') as f:
+        for line in f:
+            appids.append(line.split('/')[-2])
+            names.append(line.split('/')[-1].strip())
+   
+    return (appids, names)
+
+
+def get_values(appid, name):
+    """
+    Function gets lowest and median price of an item which 
+    is defined via its appid no. and its name. 
+    The Function then return a list: [name, [('lowest', 'x'), ('volume', 'y'), ('median', 'z')]]
+    """
+    
+    tags = ["lowest", "volume", "median"]
+    
+    url = 'http://steamcommunity.com/market/priceoverview/?appid={}&currency=3&market_hash_name={}'.format(appid, name)
+    try:
+        req = urllib.request.Request(url)
+        resp = urllib.request.urlopen(req)
+    except:
+        raise ValueError(appid, name)
+    
+    respData = resp.read()
+    test = respData.decode('utf-8')
+    test = test.split(':')[2:]
+    tags = ["lowest", "volume", "median"]
+    test = [i.split('"') for i in test]
+    prices = [i[1] for i in test]
+    prices[0] = prices[0][:4]
+    prices[2] = prices[2][:4]
+    y = list(zip(tags, prices))
+
+    return (name.replace("%20", " "), y)
+
+
+def write_file(file, values):
+    name = values[0]
+    lowest = values[1][0][1]
+    volume = values[1][1][1]
+    median = values[1][2][1]
+    date = str(datetime.date.today())
+    
+    with open(file, 'a') as f:
+        f.write(name)
+        f.write('\t')
+        f.write(lowest)
+        f.write('\t')
+        f.write(median)
+        f.write('\t')
+        f.write(volume)
+        f.write('\t')
+        f.write(date)
+        f.write("\n")
+        
+
+def graphics(df):
+    """
+    Gets df.columns [Name,Lowest,Median,Volume,Date] and plots it
+    based on Name column
+    Saves the plot as Grphic.png in working directory
+    """
+    WIDTH = 15
+    HEIGHT = 45
+    
+    fig = plt.figure(figsize=(WIDTH, HEIGHT))
+    for j,i in enumerate(df.groupby("Name")):
+        ax = plt.subplot2grid((len(names),2),(j,0))
+        plt.title(i[0], size=18)
+        sns.pointplot(x='Date', y="Lowest", data=i[1])
+        sns.pointplot(x='Date', y="Median", data=i[1], color="purple")
+        ax.legend(handles=ax.lines[::len(i[1])+1], labels=["Lowest","Median"])
+        plt.legend()
+        ax = plt.subplot2grid((len(names),2),(j,1))
+        sns.pointplot(x='Date', y="Volume", data=i[1], color="red")
+        ax.legend(handles=ax.lines[::len(i[1])+1], labels=["Volume"])
+        plt.legend
+    
+    plt.savefig("Graphic.png", dpi=300, format="png")
+
+
+def make_df():
+    """
+    reads Data.csv file 
+    returns processed dataframe for plotting
+    """
+    df = pd.read_csv("Data.csv", delimiter='\t')
+    df = df.replace({',':'.'}, regex=True)
+    df[["Lowest", "Median"]] = df[["Lowest", "Median"]].replace({'-':'0'}, regex=True)
+    df[["Lowest", "Median", "Volume"]] = df[["Lowest", "Median", "Volume"]].apply(pd.to_numeric)    
+ 
+    return df       
+
+
+appids, names = get_item_info()
+for i in range(len(appids)):
+    write_file(file, get_values(appids[i], names[i]))
+df = make_df()
+graphics(df)
+
+
+
+
