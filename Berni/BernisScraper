@@ -6,6 +6,8 @@ import datetime
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
+import time
+import tqdm
 
 
 file = "Data.csv"
@@ -49,18 +51,35 @@ def get_values(appid, name):
     test = [i.split('"') for i in test]
     prices = [i[1] for i in test]
     prices[0] = prices[0][:4]
-    prices[2] = prices[2][:4]
+    try: 
+        prices[2] = prices[2][:4]
+    except:
+        print("{} has no proper price json atm !!!".format(name))
     y = list(zip(tags, prices))
 
     return (name.replace("%20", " "), y)
 
 
 def write_file(file, values):
-    name = values[0]
-    lowest = values[1][0][1]
-    volume = values[1][1][1]
-    median = values[1][2][1]
     date = str(datetime.date.today())
+    name = values[0]
+    try:
+        lowest = values[1][0][1]
+        volume = values[1][1][1]
+        median = values[1][2][1]
+    except: 
+        with open(file, 'a') as f:
+            f.write(name)
+            f.write('\t')
+            f.write('NaN')
+            f.write('\t')
+            f.write('NaN')
+            f.write('\t')
+            f.write('NaN')
+            f.write('\t')
+            f.write(date)
+            f.write("\n")
+            return False
     
     with open(file, 'a') as f:
         f.write(name)
@@ -73,6 +92,7 @@ def write_file(file, values):
         f.write('\t')
         f.write(date)
         f.write("\n")
+        return True
         
 
 def graphics(df):
@@ -114,8 +134,9 @@ def make_df():
 
 
 appids, names = get_item_info()
-for i in range(len(appids)):
+for i in tqdm.tqdm(range(len(appids))):
     write_file(file, get_values(appids[i], names[i]))
+    time.sleep(5)
 df = make_df()
 graphics(df)
 
